@@ -312,7 +312,7 @@
                              tableName="surgical_appointment_attribute_type"/>
     </changeSet>
     <include file="migrations/surgicalAppointmentAttributeTypes.xml" />
-    <changeSet id="cure-surgical-appointment-order-id-1" author="vivek">
+    <changeSet id="surgical-appointment-order-id" author="vivek">
         <preConditions onFail="MARK_RAN">
             <not><columnExists tableName="surgical_appointment" columnName="order_id"/></not>
         </preConditions>
