@@ -69,7 +69,7 @@ public class SurgicalBlockServiceImpl extends BaseOpenmrsService implements Surg
 	public SurgicalBlock save(SurgicalBlock surgicalBlock) {
 		validateSurgicalBlock(surgicalBlock);
 		for (SurgicalAppointment appointment : surgicalBlock.getSurgicalAppointments()) {
-			if (!appointment.getVoided() && appointment.getOrder() == null) {
+			if (!appointment.getVoided() && appointment.getId() == null) {
 				try {
 					Encounter encounter = createSurgerySchedulingEncounter(appointment, surgicalBlock);
 					if (encounter != null) {
