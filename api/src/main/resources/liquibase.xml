@@ -398,6 +398,33 @@
         </insert>
     </changeSet>
 
+    <changeSet id="ot-add-surgery-scheduling-encounter-type" author="vivek">
+        <preConditions onFail="MARK_RAN">
+            <sqlCheck expectedResult="0">SELECT COUNT(*) FROM encounter_type WHERE name = 'SURGERY_SCHEDULING'</sqlCheck>
+        </preConditions>
+        <comment>Encounter created during surgery scheduling to associate a Surgery Order with the scheduled surgical appointment</comment>
+        <insert tableName="encounter_type">
+            <column name="name" value="SURGERY_SCHEDULING"/>
+            <column name="description" value="Encounter created during surgery scheduling to associate a Surgery Order with the scheduled surgical appointment"/>
+            <column name="creator" value="1"/>
+            <column name="date_created" valueDate="now()"/>
+            <column name="uuid" value="a2d9f6b3-1c4e-4a7f-b8d2-e5f3c1a6d9b4"/>
+        </insert>
+    </changeSet>
+
+    <changeSet id="ot-add-surgery-scheduling-encounter-type-gp" author="vivek">
+        <preConditions onFail="MARK_RAN">
+            <sqlCheck expectedResult="0">SELECT COUNT(*) FROM global_property WHERE property = 'operationtheater.surgerySchedulingEncounterTypeUuid'</sqlCheck>
+        </preConditions>
+        <comment>GP for configurable SURGERY_SCHEDULING encounter type UUID used when creating Surgery Orders</comment>
+        <insert tableName="global_property">
+            <column name="property" value="operationtheater.surgerySchedulingEncounterTypeUuid"/>
+            <column name="property_value" value="a2d9f6b3-1c4e-4a7f-b8d2-e5f3c1a6d9b4"/>
+            <column name="uuid" valueComputed="UUID()"/>
+            <column name="description" value="UUID of the encounter type used when creating a Surgery Scheduling encounter. Configurable to use a site-specific encounter type."/>
+        </insert>
+    </changeSet>
+
     <changeSet id="ot-add-surgery-order-type" author="vivek">
         <preConditions onFail="MARK_RAN">
             <sqlCheck expectedResult="0">SELECT COUNT(*) FROM order_type WHERE name = 'Surgery Order'</sqlCheck>
