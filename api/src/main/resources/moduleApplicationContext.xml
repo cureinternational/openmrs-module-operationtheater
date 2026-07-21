@@ -44,18 +44,6 @@
         <property name="surgicalBlockDao">
             <ref bean="surgicalBlockDao"/>
         </property>
-        <property name="orderService">
-            <ref bean="orderService"/>
-        </property>
-        <property name="conceptService">
-            <ref bean="conceptService"/>
-        </property>
-        <property name="encounterService">
-            <ref bean="encounterService"/>
-        </property>
-        <property name="adminService">
-            <ref bean="adminService"/>
-        </property>
     </bean>
 
     <bean id="surgicalAppointmentService" class="org.springframework.transaction.interceptor.TransactionProxyFactoryBean">
@@ -85,6 +73,18 @@
     <bean id="surgicalBlockServiceImpl" class="org.openmrs.module.operationtheater.api.service.impl.SurgicalBlockServiceImpl">
         <property name="surgicalBlockDAO">
             <ref bean="surgicalBlockDao"/>
+        </property>
+        <property name="orderService">
+            <ref bean="orderService"/>
+        </property>
+        <property name="conceptService">
+            <ref bean="conceptService"/>
+        </property>
+        <property name="encounterService">
+            <ref bean="encounterService"/>
+        </property>
+        <property name="adminService">
+            <ref bean="adminService"/>
         </property>
     </bean>
 

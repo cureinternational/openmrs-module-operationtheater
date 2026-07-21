@@ -1,18 +1,5 @@
 package org.openmrs.module.operationtheater.api.service.impl;
 
-import org.apache.commons.lang3.StringUtils;
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
-import org.openmrs.CareSetting;
-import org.openmrs.Concept;
-import org.openmrs.Encounter;
-import org.openmrs.EncounterType;
-import org.openmrs.Order;
-import org.openmrs.OrderType;
-import org.openmrs.api.AdministrationService;
-import org.openmrs.api.ConceptService;
-import org.openmrs.api.EncounterService;
-import org.openmrs.api.OrderService;
 import org.openmrs.api.impl.BaseOpenmrsService;
 import org.openmrs.module.operationtheater.api.dao.SurgicalAppointmentDao;
 import org.openmrs.module.operationtheater.api.dao.SurgicalBlockDAO;
@@ -23,30 +10,13 @@ import org.openmrs.module.operationtheater.api.service.SurgicalAppointmentServic
 import org.openmrs.module.operationtheater.exception.ValidationException;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.Date;
 import java.util.List;
 
 public class SurgicalAppointmentServiceImpl extends BaseOpenmrsService implements SurgicalAppointmentService {
 	
-	private static final Log log = LogFactory.getLog(SurgicalAppointmentServiceImpl.class);
-	
-	static final String SURGERY_ORDER_TYPE_NAME = "Surgery Order";
-	
-	static final String SURGICAL_ORDER_CONCEPT_NAME = "General Surgical Procedure";
-	
-	static final String SURGERY_SCHEDULING_ENCOUNTER_TYPE_GP = "operationtheater.surgerySchedulingEncounterTypeUuid";
-	
 	private SurgicalAppointmentDao surgicalAppointmentDao;
 	
 	private SurgicalBlockDAO surgicalBlockDao;
-	
-	private OrderService orderService;
-	
-	private ConceptService conceptService;
-	
-	private EncounterService encounterService;
-	
-	private AdministrationService adminService;
 	
 	public void setSurgicalAppointmentDao(SurgicalAppointmentDao surgicalAppointmentDao) {
 		this.surgicalAppointmentDao = surgicalAppointmentDao;
@@ -56,33 +26,11 @@ public class SurgicalAppointmentServiceImpl extends BaseOpenmrsService implement
 		this.surgicalBlockDao = surgicalBlockDao;
 	}
 	
-	public void setOrderService(OrderService orderService) {
-		this.orderService = orderService;
-	}
-	
-	public void setConceptService(ConceptService conceptService) {
-		this.conceptService = conceptService;
-	}
-	
-	public void setEncounterService(EncounterService encounterService) {
-		this.encounterService = encounterService;
-	}
-	
-	public void setAdminService(AdministrationService adminService) {
-		this.adminService = adminService;
-	}
-	
 	@Override
 	@Transactional
 	public SurgicalAppointment save(SurgicalAppointment surgicalAppointment) {
 		validateSurgicalAppointment(surgicalAppointment);
 		validatePatientForConflictingSurgicalAppointment(surgicalAppointment);
-		if (surgicalAppointment.getId() == null) {
-			Order surgeryOrder = createSurgeryOrder(surgicalAppointment);
-			if (surgeryOrder != null) {
-				surgicalAppointment.setOrder(surgeryOrder);
-			}
-		}
 		return surgicalAppointmentDao.save(surgicalAppointment);
 	}
 	
@@ -121,71 +69,5 @@ public class SurgicalAppointmentServiceImpl extends BaseOpenmrsService implement
 			        + conflictingSurgicalBlock.getLocation().getDisplayString() + " with "
 			        + conflictingSurgicalBlock.getProvider().getName());
 		}
-	}
-	
-	private Order createSurgeryOrder(SurgicalAppointment surgicalAppointment) {
-		try {
-			Encounter encounter = createSurgerySchedulingEncounter(surgicalAppointment);
-			if (encounter == null) {
-				return null;
-			}
-			OrderType orderType = orderService.getOrderTypeByName(SURGERY_ORDER_TYPE_NAME);
-			if (orderType == null) {
-				log.warn("Surgery Order order type not found; skipping order creation for surgical appointment");
-				return null;
-			}
-			Concept concept = conceptService.getConceptByName(SURGICAL_ORDER_CONCEPT_NAME);
-			if (concept == null) {
-				log.warn("General Surgical Procedure concept not found; skipping order creation for surgical appointment");
-				return null;
-			}
-			CareSetting careSetting = orderService.getCareSettingByName(CareSetting.CareSettingType.OUTPATIENT.toString());
-			if (careSetting == null) {
-				log.warn("OUTPATIENT care setting not found; skipping order creation for surgical appointment");
-				return null;
-			}
-			SurgicalBlock block = surgicalAppointment.getSurgicalBlock();
-			if (block == null || block.getProvider() == null) {
-				log.warn("Surgical block or provider is null; skipping order creation for surgical appointment");
-				return null;
-			}
-			Order order = new Order();
-			order.setPatient(surgicalAppointment.getPatient());
-			order.setEncounter(encounter);
-			order.setOrderType(orderType);
-			order.setConcept(concept);
-			order.setCareSetting(careSetting);
-			order.setOrderer(block.getProvider());
-			order.setDateActivated(new Date());
-			return orderService.saveOrder(order, null);
-		}
-		catch (Exception e) {
-			log.error("Failed to create Surgery Order for surgical appointment; appointment will be saved without an order",
-			    e);
-			return null;
-		}
-	}
-	
-	private Encounter createSurgerySchedulingEncounter(SurgicalAppointment surgicalAppointment) {
-		String encounterTypeUuid = adminService.getGlobalProperty(SURGERY_SCHEDULING_ENCOUNTER_TYPE_GP, "");
-		if (StringUtils.isBlank(encounterTypeUuid)) {
-			log.warn("operationtheater.surgerySchedulingEncounterTypeUuid GP not configured; skipping order creation");
-			return null;
-		}
-		EncounterType encounterType = encounterService.getEncounterTypeByUuid(encounterTypeUuid);
-		if (encounterType == null) {
-			log.warn(
-			    "SURGERY_SCHEDULING encounter type not found for uuid: " + encounterTypeUuid + "; skipping order creation");
-			return null;
-		}
-		SurgicalBlock block = surgicalAppointment.getSurgicalBlock();
-		Encounter encounter = new Encounter();
-		encounter.setPatient(surgicalAppointment.getPatient());
-		encounter.setEncounterType(encounterType);
-		encounter.setEncounterDatetime(new Date());
-		if (block != null && block.getLocation() != null) {
-			encounter.setLocation(block.getLocation());
-		}
-		return encounterService.saveEncounter(encounter);
 	}
 }
