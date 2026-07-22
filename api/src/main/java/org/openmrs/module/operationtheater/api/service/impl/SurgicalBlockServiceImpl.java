@@ -76,19 +76,14 @@ public class SurgicalBlockServiceImpl extends BaseOpenmrsService implements Surg
 				newAppointments.add(appointment);
 			}
 		}
-		log.info("SurgicalBlockServiceImpl.save() - block: " + surgicalBlock.getUuid() + ", new appointments: "
-		        + newAppointments.size());
-		
 		validateSurgicalBlock(surgicalBlock);
 		
 		for (SurgicalAppointment appointment : newAppointments) {
 			try {
 				Encounter encounter = createSurgerySchedulingEncounter(appointment, surgicalBlock);
 				if (encounter != null) {
-					log.info("SURGERY_SCHEDULING encounter created: " + encounter.getUuid());
 					Order order = createSurgeryOrder(appointment, encounter, surgicalBlock);
 					if (order != null) {
-						log.info("Surgery Order created: " + order.getUuid() + " for appointment: " + appointment.getUuid());
 						appointment.setOrder(order);
 					}
 				}
