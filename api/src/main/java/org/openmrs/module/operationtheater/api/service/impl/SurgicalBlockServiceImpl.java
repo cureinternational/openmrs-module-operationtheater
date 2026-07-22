@@ -21,6 +21,7 @@ import org.openmrs.module.operationtheater.api.service.SurgicalBlockService;
 import org.openmrs.module.operationtheater.exception.ValidationException;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 
@@ -67,25 +68,38 @@ public class SurgicalBlockServiceImpl extends BaseOpenmrsService implements Surg
 	@Override
 	@Transactional
 	public SurgicalBlock save(SurgicalBlock surgicalBlock) {
-		validateSurgicalBlock(surgicalBlock);
+		// Snapshot new appointments BEFORE validation triggers Hibernate flush (which
+		// assigns IDs)
+		List<SurgicalAppointment> newAppointments = new ArrayList<>();
 		for (SurgicalAppointment appointment : surgicalBlock.getSurgicalAppointments()) {
 			if (!appointment.getVoided() && appointment.getId() == null) {
-				try {
-					Encounter encounter = createSurgerySchedulingEncounter(appointment, surgicalBlock);
-					if (encounter != null) {
-						Order order = createSurgeryOrder(appointment, encounter, surgicalBlock);
-						if (order != null) {
-							appointment.setOrder(order);
-						}
-					}
-				}
-				catch (Exception e) {
-					log.error("Failed to create Surgery Order for appointment " + appointment.getUuid()
-					        + "; appointment will be saved without an order",
-					    e);
-				}
+				newAppointments.add(appointment);
 			}
 		}
+		log.info("SurgicalBlockServiceImpl.save() - block: " + surgicalBlock.getUuid() + ", new appointments: "
+		        + newAppointments.size());
+		
+		validateSurgicalBlock(surgicalBlock);
+		
+		for (SurgicalAppointment appointment : newAppointments) {
+			try {
+				Encounter encounter = createSurgerySchedulingEncounter(appointment, surgicalBlock);
+				if (encounter != null) {
+					log.info("SURGERY_SCHEDULING encounter created: " + encounter.getUuid());
+					Order order = createSurgeryOrder(appointment, encounter, surgicalBlock);
+					if (order != null) {
+						log.info("Surgery Order created: " + order.getUuid() + " for appointment: " + appointment.getUuid());
+						appointment.setOrder(order);
+					}
+				}
+			}
+			catch (Exception e) {
+				log.error("Failed to create Surgery Order for appointment " + appointment.getUuid()
+				        + "; appointment will be saved without an order",
+				    e);
+			}
+		}
+		
 		return surgicalBlockDAO.save(surgicalBlock);
 	}
 	
