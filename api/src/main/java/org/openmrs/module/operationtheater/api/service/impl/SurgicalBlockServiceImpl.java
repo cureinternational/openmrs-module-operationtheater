@@ -79,19 +79,12 @@ public class SurgicalBlockServiceImpl extends BaseOpenmrsService implements Surg
 		validateSurgicalBlock(surgicalBlock);
 		
 		for (SurgicalAppointment appointment : newAppointments) {
-			try {
-				Encounter encounter = createSurgerySchedulingEncounter(appointment, surgicalBlock);
-				if (encounter != null) {
-					Order order = createSurgeryOrder(appointment, encounter, surgicalBlock);
-					if (order != null) {
-						appointment.setOrder(order);
-					}
+			Encounter encounter = createSurgerySchedulingEncounter(appointment, surgicalBlock);
+			if (encounter != null) {
+				Order order = createSurgeryOrder(appointment, encounter, surgicalBlock);
+				if (order != null) {
+					appointment.setOrder(order);
 				}
-			}
-			catch (Exception e) {
-				log.error("Failed to create Surgery Order for appointment " + appointment.getUuid()
-				        + "; appointment will be saved without an order",
-				    e);
 			}
 		}
 		
@@ -164,6 +157,9 @@ public class SurgicalBlockServiceImpl extends BaseOpenmrsService implements Surg
 			    "SURGERY_SCHEDULING encounter type not found for uuid: " + encounterTypeUuid + "; skipping order creation");
 			return null;
 		}
+		// Visit is intentionally not set — this encounter exists solely as an OpenMRS
+		// context anchor for the Surgery Order (which requires an encounter). It is not
+		// a clinical visit and does not appear in patient visit timelines.
 		Encounter encounter = new Encounter();
 		encounter.setPatient(appointment.getPatient());
 		encounter.setEncounterType(encounterType);
