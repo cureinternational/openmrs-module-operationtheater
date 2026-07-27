@@ -31,6 +31,8 @@ import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.*;
 import static org.mockito.MockitoAnnotations.initMocks;
+import static org.powermock.api.mockito.PowerMockito.mockStatic;
+import static org.powermock.api.mockito.PowerMockito.when;
 
 @RunWith(PowerMockRunner.class)
 @PrepareForTest({ Context.class })
@@ -339,9 +341,10 @@ public class SurgicalBlockServiceImplTest {
 		SurgicalBlock block = buildValidBlock();
 		SurgicalAppointment newAppointment = buildNewAppointment(block);
 		block.setSurgicalAppointments(Collections.singleton(newAppointment));
-		when(adminService.getGlobalProperty(SurgicalBlockServiceImpl.SURGERY_SCHEDULING_ENCOUNTER_TYPE_GP, ""))
-		        .thenReturn("");
-		when(surgicalBlockDAO.save(block)).thenReturn(block);
+		mockStatic(Context.class);
+		when(Context.getEncounterService()).thenReturn(encounterService);
+		doReturn("").when(adminService).getGlobalProperty(SurgicalBlockServiceImpl.SURGERY_SCHEDULING_ENCOUNTER_TYPE_GP, "");
+		doReturn(block).when(surgicalBlockDAO).save(block);
 		
 		surgicalBlockService.save(block);
 		
@@ -388,14 +391,14 @@ public class SurgicalBlockServiceImplTest {
 	}
 	
 	private void setupOrderCreationMocks() {
-		when(adminService.getGlobalProperty(SurgicalBlockServiceImpl.SURGERY_SCHEDULING_ENCOUNTER_TYPE_GP, ""))
-		        .thenReturn("encounter-type-uuid");
-		EncounterType encounterType = new EncounterType();
-		when(encounterService.getEncounterTypeByUuid("encounter-type-uuid")).thenReturn(encounterType);
-		when(orderService.getOrderTypeByName(SurgicalBlockServiceImpl.SURGERY_ORDER_TYPE_NAME)).thenReturn(new OrderType());
-		when(conceptService.getConceptByName(SurgicalBlockServiceImpl.SURGICAL_ORDER_CONCEPT_NAME))
-		        .thenReturn(new Concept());
-		when(orderService.getCareSettingByName(CareSetting.CareSettingType.OUTPATIENT.toString()))
-		        .thenReturn(new CareSetting());
+		mockStatic(Context.class);
+		when(Context.getEncounterService()).thenReturn(encounterService);
+		doReturn("encounter-type-uuid").when(adminService)
+		        .getGlobalProperty(SurgicalBlockServiceImpl.SURGERY_SCHEDULING_ENCOUNTER_TYPE_GP, "");
+		doReturn(new EncounterType()).when(encounterService).getEncounterTypeByUuid("encounter-type-uuid");
+		doReturn(new OrderType()).when(orderService).getOrderTypeByName(SurgicalBlockServiceImpl.SURGERY_ORDER_TYPE_NAME);
+		doReturn(new Concept()).when(conceptService).getConceptByName(SurgicalBlockServiceImpl.SURGICAL_ORDER_CONCEPT_NAME);
+		doReturn(new CareSetting()).when(orderService)
+		        .getCareSettingByName(CareSetting.CareSettingType.OUTPATIENT.toString());
 	}
 }
