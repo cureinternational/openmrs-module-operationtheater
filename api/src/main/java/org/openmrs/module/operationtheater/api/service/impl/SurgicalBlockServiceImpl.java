@@ -29,9 +29,9 @@ public class SurgicalBlockServiceImpl extends BaseOpenmrsService implements Surg
 	
 	private static final Log log = LogFactory.getLog(SurgicalBlockServiceImpl.class);
 	
-	static final String SURGERY_ORDER_TYPE_NAME = "Surgery Order";
+	static final String SURGERY_ORDER_TYPE_UUID = "c1e3d8a2-4f7b-4a9e-b5c6-d2f8e3a1b4c7";
 	
-	static final String SURGICAL_ORDER_CONCEPT_NAME = "General Surgical Procedure";
+	static final String SURGICAL_ORDER_CONCEPT_UUID = "c8a89784-e16e-4929-ab5c-be2f3d47f2de";
 	
 	static final String SURGERY_SCHEDULING_ENCOUNTER_TYPE_GP = "operationtheater.surgerySchedulingEncounterTypeUuid";
 	
@@ -171,12 +171,12 @@ public class SurgicalBlockServiceImpl extends BaseOpenmrsService implements Surg
 	}
 	
 	private Order createSurgeryOrder(SurgicalAppointment appointment, Encounter encounter, SurgicalBlock block) {
-		OrderType orderType = orderService.getOrderTypeByName(SURGERY_ORDER_TYPE_NAME);
+		OrderType orderType = orderService.getOrderTypeByUuid(SURGERY_ORDER_TYPE_UUID);
 		if (orderType == null) {
 			log.warn("Surgery Order order type not found; skipping order creation");
 			return null;
 		}
-		Concept concept = conceptService.getConceptByName(SURGICAL_ORDER_CONCEPT_NAME);
+		Concept concept = conceptService.getConceptByUuid(SURGICAL_ORDER_CONCEPT_UUID);
 		if (concept == null) {
 			log.warn("General Surgical Procedure concept not found; skipping order creation");
 			return null;

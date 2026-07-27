@@ -392,8 +392,8 @@ public class SurgicalBlockServiceImplTest {
 		        .thenReturn("encounter-type-uuid");
 		EncounterType encounterType = new EncounterType();
 		when(encounterService.getEncounterTypeByUuid("encounter-type-uuid")).thenReturn(encounterType);
-		when(orderService.getOrderTypeByName(SurgicalBlockServiceImpl.SURGERY_ORDER_TYPE_NAME)).thenReturn(new OrderType());
-		when(conceptService.getConceptByName(SurgicalBlockServiceImpl.SURGICAL_ORDER_CONCEPT_NAME))
+		when(orderService.getOrderTypeByUuid(SurgicalBlockServiceImpl.SURGERY_ORDER_TYPE_UUID)).thenReturn(new OrderType());
+		when(conceptService.getConceptByUuid(SurgicalBlockServiceImpl.SURGICAL_ORDER_CONCEPT_UUID))
 		        .thenReturn(new Concept());
 		when(orderService.getCareSettingByName(CareSetting.CareSettingType.OUTPATIENT.toString()))
 		        .thenReturn(new CareSetting());
