@@ -11,8 +11,8 @@ import org.openmrs.Order;
 import org.openmrs.OrderType;
 import org.openmrs.api.AdministrationService;
 import org.openmrs.api.ConceptService;
+import org.openmrs.api.EncounterService;
 import org.openmrs.api.OrderService;
-import org.openmrs.api.context.Context;
 import org.openmrs.api.impl.BaseOpenmrsService;
 import org.openmrs.module.operationtheater.api.dao.SurgicalBlockDAO;
 import org.openmrs.module.operationtheater.api.model.SurgicalAppointment;
@@ -41,6 +41,8 @@ public class SurgicalBlockServiceImpl extends BaseOpenmrsService implements Surg
 	
 	private ConceptService conceptService;
 	
+	private EncounterService encounterService;
+	
 	private AdministrationService adminService;
 	
 	public void setSurgicalBlockDAO(SurgicalBlockDAO surgicalBlockDAO) {
@@ -53,6 +55,10 @@ public class SurgicalBlockServiceImpl extends BaseOpenmrsService implements Surg
 	
 	public void setConceptService(ConceptService conceptService) {
 		this.conceptService = conceptService;
+	}
+	
+	public void setEncounterService(EncounterService encounterService) {
+		this.encounterService = encounterService;
 	}
 	
 	public void setAdminService(AdministrationService adminService) {
@@ -145,7 +151,7 @@ public class SurgicalBlockServiceImpl extends BaseOpenmrsService implements Surg
 			log.warn("operationtheater.surgerySchedulingEncounterTypeUuid GP not configured; skipping order creation");
 			return null;
 		}
-		EncounterType encounterType = Context.getEncounterService().getEncounterTypeByUuid(encounterTypeUuid);
+		EncounterType encounterType = encounterService.getEncounterTypeByUuid(encounterTypeUuid);
 		if (encounterType == null) {
 			log.warn(
 			    "SURGERY_SCHEDULING encounter type not found for uuid: " + encounterTypeUuid + "; skipping order creation");
@@ -161,7 +167,7 @@ public class SurgicalBlockServiceImpl extends BaseOpenmrsService implements Surg
 		if (block.getLocation() != null) {
 			encounter.setLocation(block.getLocation());
 		}
-		return Context.getEncounterService().saveEncounter(encounter);
+		return encounterService.saveEncounter(encounter);
 	}
 	
 	private Order createSurgeryOrder(SurgicalAppointment appointment, Encounter encounter, SurgicalBlock block) {
