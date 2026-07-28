@@ -14,6 +14,11 @@ concurrency:
 jobs:
   build:
     uses: openmrs/openmrs-contrib-gha-workflows/.github/workflows/build-backend-module.yml@main
+    with:
+      # This module targets Java 8 (maven.compiler source/target 1.8). Its PowerMock-based
+      # advice tests fail under JPMS on Java 11+ with IllegalAccessError on jdk.xml.internal,
+      # so pin the matrix rather than letting the platform dependency infer [8, 11].
+      java_versions: '[8]'
     secrets:
       MAVEN_REPO_USERNAME: ${{ secrets.MAVEN_REPO_USERNAME }}
       MAVEN_REPO_API_KEY: ${{ secrets.MAVEN_REPO_API_KEY }}
