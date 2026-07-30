@@ -8,6 +8,10 @@ import org.junit.runner.RunWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.openmrs.*;
+import org.openmrs.api.AdministrationService;
+import org.openmrs.api.ConceptService;
+import org.openmrs.api.EncounterService;
+import org.openmrs.api.OrderService;
 import org.openmrs.api.context.Context;
 
 import org.openmrs.module.operationtheater.api.dao.SurgicalBlockDAO;
@@ -22,7 +26,9 @@ import java.text.SimpleDateFormat;
 import java.util.*;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNull;
 import static org.mockito.Matchers.any;
+import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.*;
 import static org.mockito.MockitoAnnotations.initMocks;
 
@@ -32,6 +38,18 @@ public class SurgicalBlockServiceImplTest {
 	
 	@Mock
 	SurgicalBlockDAO surgicalBlockDAO;
+	
+	@Mock
+	AdministrationService adminService;
+	
+	@Mock
+	EncounterService encounterService;
+	
+	@Mock
+	OrderService orderService;
+	
+	@Mock
+	ConceptService conceptService;
 	
 	@InjectMocks
 	SurgicalBlockServiceImpl surgicalBlockService;
@@ -266,5 +284,118 @@ public class SurgicalBlockServiceImplTest {
 		
 		verify(surgicalBlockDAO, times(1)).getSurgicalBlocksFor(startDatetime, endDatetime, null, null, false, true);
 		assertEquals(surgicalBlock, surgicalBlocks.get(0));
+	}
+	
+	@Test
+	public void shouldCreateEncounterAndOrderForNewAppointment() throws ParseException {
+		SurgicalBlock block = buildValidBlock();
+		SurgicalAppointment newAppointment = buildNewAppointment(block);
+		block.setSurgicalAppointments(Collections.singleton(newAppointment));
+		setupOrderCreationMocks();
+		Encounter savedEncounter = new Encounter();
+		Order savedOrder = new Order();
+		when(encounterService.saveEncounter(any(Encounter.class))).thenReturn(savedEncounter);
+		when(orderService.saveOrder(any(Order.class), eq(null))).thenReturn(savedOrder);
+		when(surgicalBlockDAO.save(block)).thenReturn(block);
+		
+		surgicalBlockService.save(block);
+		
+		verify(encounterService, times(1)).saveEncounter(any(Encounter.class));
+		verify(orderService, times(1)).saveOrder(any(Order.class), eq(null));
+		assertEquals(savedOrder, newAppointment.getOrder());
+	}
+	
+	@Test
+	public void shouldSkipOrderCreationForExistingAppointment() throws ParseException {
+		SurgicalBlock block = buildValidBlock();
+		SurgicalAppointment existingAppointment = buildNewAppointment(block);
+		existingAppointment.setId(99); // already persisted
+		block.setSurgicalAppointments(Collections.singleton(existingAppointment));
+		when(surgicalBlockDAO.save(block)).thenReturn(block);
+		
+		surgicalBlockService.save(block);
+		
+		verify(encounterService, never()).saveEncounter(any(Encounter.class));
+		verify(orderService, never()).saveOrder(any(Order.class), any());
+		assertNull(existingAppointment.getOrder());
+	}
+	
+	@Test
+	public void shouldSkipOrderCreationForVoidedNewAppointment() throws ParseException {
+		SurgicalBlock block = buildValidBlock();
+		SurgicalAppointment voidedAppointment = buildNewAppointment(block);
+		voidedAppointment.setVoided(true);
+		block.setSurgicalAppointments(Collections.singleton(voidedAppointment));
+		when(surgicalBlockDAO.save(block)).thenReturn(block);
+		
+		surgicalBlockService.save(block);
+		
+		verify(encounterService, never()).saveEncounter(any(Encounter.class));
+		verify(orderService, never()).saveOrder(any(Order.class), any());
+	}
+	
+	@Test
+	public void shouldNotSetOrderWhenGPNotConfigured() throws ParseException {
+		SurgicalBlock block = buildValidBlock();
+		SurgicalAppointment newAppointment = buildNewAppointment(block);
+		block.setSurgicalAppointments(Collections.singleton(newAppointment));
+		when(adminService.getGlobalProperty(SurgicalBlockServiceImpl.SURGERY_SCHEDULING_ENCOUNTER_TYPE_GP, ""))
+		        .thenReturn("");
+		when(surgicalBlockDAO.save(block)).thenReturn(block);
+		
+		surgicalBlockService.save(block);
+		
+		verify(encounterService, never()).saveEncounter(any(Encounter.class));
+		assertNull(newAppointment.getOrder());
+	}
+	
+	@Test
+	public void shouldPropagateExceptionWhenOrderSaveFails() throws ParseException {
+		SurgicalBlock block = buildValidBlock();
+		SurgicalAppointment newAppointment = buildNewAppointment(block);
+		block.setSurgicalAppointments(Collections.singleton(newAppointment));
+		setupOrderCreationMocks();
+		Encounter savedEncounter = new Encounter();
+		when(encounterService.saveEncounter(any(Encounter.class))).thenReturn(savedEncounter);
+		when(orderService.saveOrder(any(Order.class), eq(null))).thenThrow(new RuntimeException("Order save failed"));
+		
+		exception.expect(RuntimeException.class);
+		exception.expectMessage("Order save failed");
+		surgicalBlockService.save(block);
+	}
+	
+	private SurgicalBlock buildValidBlock() throws ParseException {
+		SurgicalBlock block = new SurgicalBlock();
+		block.setStartDatetime(simpleDateFormat.parse("2017-04-25 13:45:00"));
+		block.setEndDatetime(simpleDateFormat.parse("2017-04-25 14:45:00"));
+		block.setLocation(new Location(1));
+		Provider provider = new Provider(1);
+		block.setProvider(provider);
+		when(surgicalBlockDAO.getOverlappingSurgicalBlocksFor(any(), any(), any(), eq(null), any()))
+		        .thenReturn(new ArrayList<>());
+		when(surgicalBlockDAO.getOverlappingSurgicalBlocksFor(any(), any(), eq(null), any(), any()))
+		        .thenReturn(new ArrayList<>());
+		when(surgicalBlockDAO.getOverlappingSurgicalAppointmentsForPatient(any(), any(), any(), any()))
+		        .thenReturn(new ArrayList<>());
+		return block;
+	}
+	
+	private SurgicalAppointment buildNewAppointment(SurgicalBlock block) {
+		SurgicalAppointment appointment = new SurgicalAppointment();
+		appointment.setPatient(new Patient(1));
+		appointment.setSurgicalBlock(block);
+		return appointment; // getId() == null → new appointment
+	}
+	
+	private void setupOrderCreationMocks() {
+		when(adminService.getGlobalProperty(SurgicalBlockServiceImpl.SURGERY_SCHEDULING_ENCOUNTER_TYPE_GP, ""))
+		        .thenReturn("encounter-type-uuid");
+		EncounterType encounterType = new EncounterType();
+		when(encounterService.getEncounterTypeByUuid("encounter-type-uuid")).thenReturn(encounterType);
+		when(orderService.getOrderTypeByUuid(SurgicalBlockServiceImpl.SURGERY_ORDER_TYPE_UUID)).thenReturn(new OrderType());
+		when(conceptService.getConceptByUuid(SurgicalBlockServiceImpl.SURGICAL_ORDER_CONCEPT_UUID))
+		        .thenReturn(new Concept());
+		when(orderService.getCareSettingByName(CareSetting.CareSettingType.OUTPATIENT.toString()))
+		        .thenReturn(new CareSetting());
 	}
 }
