@@ -400,7 +400,7 @@
 
     <changeSet id="ot-add-surgery-scheduling-encounter-type" author="vivek">
         <preConditions onFail="MARK_RAN">
-            <sqlCheck expectedResult="0">SELECT COUNT(*) FROM encounter_type WHERE name = 'SURGERY_SCHEDULING'</sqlCheck>
+            <sqlCheck expectedResult="0">SELECT COUNT(*) FROM encounter_type WHERE uuid = 'a2d9f6b3-1c4e-4a7f-b8d2-e5f3c1a6d9b4'</sqlCheck>
         </preConditions>
         <comment>Encounter created during surgery scheduling to associate a Surgery Order with the scheduled surgical appointment</comment>
         <insert tableName="encounter_type">
@@ -427,7 +427,7 @@
 
     <changeSet id="ot-add-surgery-order-type" author="vivek">
         <preConditions onFail="MARK_RAN">
-            <sqlCheck expectedResult="0">SELECT COUNT(*) FROM order_type WHERE name = 'Surgery Order'</sqlCheck>
+            <sqlCheck expectedResult="0">SELECT COUNT(*) FROM order_type WHERE uuid = 'c1e3d8a2-4f7b-4a9e-b5c6-d2f8e3a1b4c7'</sqlCheck>
         </preConditions>
         <comment>Add Surgery Order order type for surgical appointments</comment>
         <insert tableName="order_type">
@@ -442,7 +442,7 @@
 
     <changeSet id="ot-add-surgical-order-concept" author="vivek">
         <preConditions onFail="MARK_RAN">
-            <sqlCheck expectedResult="0">SELECT COUNT(*) FROM concept_name WHERE name = 'General Surgical Procedure' AND concept_name_type = 'FULLY_SPECIFIED' AND voided = 0</sqlCheck>
+            <sqlCheck expectedResult="0">SELECT COUNT(*) FROM concept WHERE uuid = 'c8a89784-e16e-4929-ab5c-be2f3d47f2de'</sqlCheck>
         </preConditions>
         <comment>Add General Surgical Procedure concept used when creating Surgery Orders for scheduled appointments</comment>
         <sql>

@@ -25,7 +25,10 @@ import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.*;
 
+import org.mockito.ArgumentCaptor;
+
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.eq;
@@ -294,14 +297,30 @@ public class SurgicalBlockServiceImplTest {
 		setupOrderCreationMocks();
 		Encounter savedEncounter = new Encounter();
 		Order savedOrder = new Order();
-		when(encounterService.saveEncounter(any(Encounter.class))).thenReturn(savedEncounter);
-		when(orderService.saveOrder(any(Order.class), eq(null))).thenReturn(savedOrder);
-		when(surgicalBlockDAO.save(block)).thenReturn(block);
+		doReturn(savedEncounter).when(encounterService).saveEncounter(any(Encounter.class));
+		doReturn(savedOrder).when(orderService).saveOrder(any(Order.class), eq(null));
+		doReturn(block).when(surgicalBlockDAO).save(block);
 		
 		surgicalBlockService.save(block);
 		
-		verify(encounterService, times(1)).saveEncounter(any(Encounter.class));
-		verify(orderService, times(1)).saveOrder(any(Order.class), eq(null));
+		ArgumentCaptor<Encounter> encounterCaptor = ArgumentCaptor.forClass(Encounter.class);
+		verify(encounterService).saveEncounter(encounterCaptor.capture());
+		Encounter capturedEncounter = encounterCaptor.getValue();
+		assertEquals(newAppointment.getPatient(), capturedEncounter.getPatient());
+		assertNotNull(capturedEncounter.getEncounterType());
+		assertNotNull(capturedEncounter.getEncounterDatetime());
+		assertNull(capturedEncounter.getVisit());
+		
+		ArgumentCaptor<Order> orderCaptor = ArgumentCaptor.forClass(Order.class);
+		verify(orderService).saveOrder(orderCaptor.capture(), eq(null));
+		Order capturedOrder = orderCaptor.getValue();
+		assertEquals(newAppointment.getPatient(), capturedOrder.getPatient());
+		assertEquals(savedEncounter, capturedOrder.getEncounter());
+		assertNotNull(capturedOrder.getOrderType());
+		assertNotNull(capturedOrder.getConcept());
+		assertNotNull(capturedOrder.getCareSetting());
+		assertEquals(block.getProvider(), capturedOrder.getOrderer());
+		assertNotNull(capturedOrder.getDateActivated());
 		assertEquals(savedOrder, newAppointment.getOrder());
 	}
 	

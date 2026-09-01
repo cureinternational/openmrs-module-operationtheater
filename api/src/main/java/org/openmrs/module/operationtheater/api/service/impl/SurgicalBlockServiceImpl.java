@@ -29,11 +29,11 @@ public class SurgicalBlockServiceImpl extends BaseOpenmrsService implements Surg
 	
 	private static final Log log = LogFactory.getLog(SurgicalBlockServiceImpl.class);
 	
+	static final String SURGERY_SCHEDULING_ENCOUNTER_TYPE_GP = "operationtheater.surgerySchedulingEncounterTypeUuid";
+	
 	static final String SURGERY_ORDER_TYPE_UUID = "c1e3d8a2-4f7b-4a9e-b5c6-d2f8e3a1b4c7";
 	
 	static final String SURGICAL_ORDER_CONCEPT_UUID = "c8a89784-e16e-4929-ab5c-be2f3d47f2de";
-	
-	static final String SURGERY_SCHEDULING_ENCOUNTER_TYPE_GP = "operationtheater.surgerySchedulingEncounterTypeUuid";
 	
 	SurgicalBlockDAO surgicalBlockDAO;
 	
@@ -79,13 +79,7 @@ public class SurgicalBlockServiceImpl extends BaseOpenmrsService implements Surg
 		validateSurgicalBlock(surgicalBlock);
 		
 		for (SurgicalAppointment appointment : newAppointments) {
-			Encounter encounter = createSurgerySchedulingEncounter(appointment, surgicalBlock);
-			if (encounter != null) {
-				Order order = createSurgeryOrder(appointment, encounter, surgicalBlock);
-				if (order != null) {
-					appointment.setOrder(order);
-				}
-			}
+			createAndLinkSurgeryOrder(appointment, surgicalBlock);
 		}
 		
 		return surgicalBlockDAO.save(surgicalBlock);
@@ -145,21 +139,46 @@ public class SurgicalBlockServiceImpl extends BaseOpenmrsService implements Surg
 		    surgicalBlock.getEndDatetime(), null, surgicalBlock.getLocation(), surgicalBlock.getId());
 	}
 	
-	private Encounter createSurgerySchedulingEncounter(SurgicalAppointment appointment, SurgicalBlock block) {
+	private void createAndLinkSurgeryOrder(SurgicalAppointment appointment, SurgicalBlock block) {
+		// Fix: resolve ALL prerequisites before any DB write to prevent orphaned
+		// encounters.
 		String encounterTypeUuid = adminService.getGlobalProperty(SURGERY_SCHEDULING_ENCOUNTER_TYPE_GP, "");
 		if (StringUtils.isBlank(encounterTypeUuid)) {
-			log.warn("operationtheater.surgerySchedulingEncounterTypeUuid GP not configured; skipping order creation");
-			return null;
+			log.warn(SURGERY_SCHEDULING_ENCOUNTER_TYPE_GP + " GP not configured; skipping order creation");
+			return;
 		}
 		EncounterType encounterType = encounterService.getEncounterTypeByUuid(encounterTypeUuid);
 		if (encounterType == null) {
-			log.warn(
-			    "SURGERY_SCHEDULING encounter type not found for uuid: " + encounterTypeUuid + "; skipping order creation");
-			return null;
+			log.warn("SURGERY_SCHEDULING encounter type not found for uuid: " + encounterTypeUuid);
+			return;
 		}
-		// Visit is intentionally not set — this encounter exists solely as an OpenMRS
-		// context anchor for the Surgery Order (which requires an encounter). It is not
-		// a clinical visit and does not appear in patient visit timelines.
+		
+		OrderType orderType = orderService.getOrderTypeByUuid(SURGERY_ORDER_TYPE_UUID);
+		if (orderType == null) {
+			log.warn("Surgery Order type not found for uuid: " + SURGERY_ORDER_TYPE_UUID);
+			return;
+		}
+		
+		Concept concept = conceptService.getConceptByUuid(SURGICAL_ORDER_CONCEPT_UUID);
+		if (concept == null) {
+			log.warn("Surgical Order concept not found for uuid: " + SURGICAL_ORDER_CONCEPT_UUID);
+			return;
+		}
+		
+		CareSetting careSetting = orderService.getCareSettingByName(CareSetting.CareSettingType.OUTPATIENT.toString());
+		if (careSetting == null) {
+			log.warn("OUTPATIENT care setting not found; skipping order creation");
+			return;
+		}
+		
+		if (block.getProvider() == null) {
+			log.warn("Surgical block provider is null; skipping order creation");
+			return;
+		}
+		
+		// All prerequisites validated — now safe to create encounter (first DB write).
+		// Visit is intentionally not set: this encounter is solely an OpenMRS context
+		// anchor for the Surgery Order and does not appear in patient visit timelines.
 		Encounter encounter = new Encounter();
 		encounter.setPatient(appointment.getPatient());
 		encounter.setEncounterType(encounterType);
@@ -167,29 +186,8 @@ public class SurgicalBlockServiceImpl extends BaseOpenmrsService implements Surg
 		if (block.getLocation() != null) {
 			encounter.setLocation(block.getLocation());
 		}
-		return encounterService.saveEncounter(encounter);
-	}
-	
-	private Order createSurgeryOrder(SurgicalAppointment appointment, Encounter encounter, SurgicalBlock block) {
-		OrderType orderType = orderService.getOrderTypeByUuid(SURGERY_ORDER_TYPE_UUID);
-		if (orderType == null) {
-			log.warn("Surgery Order order type not found; skipping order creation");
-			return null;
-		}
-		Concept concept = conceptService.getConceptByUuid(SURGICAL_ORDER_CONCEPT_UUID);
-		if (concept == null) {
-			log.warn("General Surgical Procedure concept not found; skipping order creation");
-			return null;
-		}
-		CareSetting careSetting = orderService.getCareSettingByName(CareSetting.CareSettingType.OUTPATIENT.toString());
-		if (careSetting == null) {
-			log.warn("OUTPATIENT care setting not found; skipping order creation");
-			return null;
-		}
-		if (block.getProvider() == null) {
-			log.warn("Surgical block provider is null; skipping order creation");
-			return null;
-		}
+		encounter = encounterService.saveEncounter(encounter);
+		
 		Order order = new Order();
 		order.setPatient(appointment.getPatient());
 		order.setEncounter(encounter);
@@ -198,6 +196,12 @@ public class SurgicalBlockServiceImpl extends BaseOpenmrsService implements Surg
 		order.setCareSetting(careSetting);
 		order.setOrderer(block.getProvider());
 		order.setDateActivated(new Date());
-		return orderService.saveOrder(order, null);
+		// NOTE: when a surgical appointment is cancelled or voided, the Surgery Order
+		// is
+		// not automatically voided. Order lifecycle management on cancellation is a
+		// follow-up task.
+		order = orderService.saveOrder(order, null);
+		
+		appointment.setOrder(order);
 	}
 }
