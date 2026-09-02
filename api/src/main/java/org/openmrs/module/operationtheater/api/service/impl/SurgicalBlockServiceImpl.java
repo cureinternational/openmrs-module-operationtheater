@@ -13,6 +13,7 @@ import org.openmrs.api.AdministrationService;
 import org.openmrs.api.ConceptService;
 import org.openmrs.api.EncounterService;
 import org.openmrs.api.OrderService;
+import org.openmrs.api.context.Context;
 import org.openmrs.api.impl.BaseOpenmrsService;
 import org.openmrs.module.operationtheater.api.dao.SurgicalBlockDAO;
 import org.openmrs.module.operationtheater.api.model.SurgicalAppointment;
@@ -140,8 +141,25 @@ public class SurgicalBlockServiceImpl extends BaseOpenmrsService implements Surg
 	}
 	
 	private void createAndLinkSurgeryOrder(SurgicalAppointment appointment, SurgicalBlock block) {
-		// Fix: resolve ALL prerequisites before any DB write to prevent orphaned
-		// encounters.
+		Context.addProxyPrivilege("Get Encounter Types");
+		Context.addProxyPrivilege("Add Encounters");
+		Context.addProxyPrivilege("Get Order Types");
+		Context.addProxyPrivilege("Add Orders");
+		Context.addProxyPrivilege("Get Concepts");
+		try {
+			createAndLinkSurgeryOrderWithPrivileges(appointment, block);
+		}
+		finally {
+			Context.removeProxyPrivilege("Get Encounter Types");
+			Context.removeProxyPrivilege("Add Encounters");
+			Context.removeProxyPrivilege("Get Order Types");
+			Context.removeProxyPrivilege("Add Orders");
+			Context.removeProxyPrivilege("Get Concepts");
+		}
+	}
+	
+	private void createAndLinkSurgeryOrderWithPrivileges(SurgicalAppointment appointment, SurgicalBlock block) {
+		// Resolve ALL prerequisites before any DB write to prevent orphaned encounters.
 		String encounterTypeUuid = adminService.getGlobalProperty(SURGERY_SCHEDULING_ENCOUNTER_TYPE_GP, "");
 		if (StringUtils.isBlank(encounterTypeUuid)) {
 			log.warn(SURGERY_SCHEDULING_ENCOUNTER_TYPE_GP + " GP not configured; skipping order creation");
