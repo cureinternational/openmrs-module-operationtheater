@@ -411,9 +411,13 @@ public class SurgicalBlockServiceImplTest {
 		org.powermock.api.mockito.PowerMockito.when(Context.getEncounterService()).thenReturn(encounterService);
 		doReturn("encounter-type-uuid").when(adminService)
 		        .getGlobalProperty(SurgicalBlockServiceImpl.SURGERY_SCHEDULING_ENCOUNTER_TYPE_GP, "");
+		doReturn("order-type-uuid").when(adminService).getGlobalProperty(SurgicalBlockServiceImpl.SURGERY_ORDER_TYPE_UUID_GP,
+		    "");
+		doReturn("concept-uuid").when(adminService)
+		        .getGlobalProperty(SurgicalBlockServiceImpl.SURGICAL_ORDER_CONCEPT_UUID_GP, "");
 		doReturn(new EncounterType()).when(encounterService).getEncounterTypeByUuid("encounter-type-uuid");
-		doReturn(new OrderType()).when(orderService).getOrderTypeByUuid(SurgicalBlockServiceImpl.SURGERY_ORDER_TYPE_UUID);
-		doReturn(new Concept()).when(conceptService).getConceptByUuid(SurgicalBlockServiceImpl.SURGICAL_ORDER_CONCEPT_UUID);
+		doReturn(new OrderType()).when(orderService).getOrderTypeByUuid("order-type-uuid");
+		doReturn(new Concept()).when(conceptService).getConceptByUuid("concept-uuid");
 		doReturn(new CareSetting()).when(orderService)
 		        .getCareSettingByName(CareSetting.CareSettingType.OUTPATIENT.toString());
 	}

@@ -32,9 +32,9 @@ public class SurgicalBlockServiceImpl extends BaseOpenmrsService implements Surg
 	
 	static final String SURGERY_SCHEDULING_ENCOUNTER_TYPE_GP = "operationtheater.surgerySchedulingEncounterTypeUuid";
 	
-	static final String SURGERY_ORDER_TYPE_UUID = "c1e3d8a2-4f7b-4a9e-b5c6-d2f8e3a1b4c7";
+	static final String SURGERY_ORDER_TYPE_UUID_GP = "operationtheater.surgeryOrderTypeUuid";
 	
-	static final String SURGICAL_ORDER_CONCEPT_UUID = "c8a89784-e16e-4929-ab5c-be2f3d47f2de";
+	static final String SURGICAL_ORDER_CONCEPT_UUID_GP = "operationtheater.surgicalOrderConceptUuid";
 	
 	SurgicalBlockDAO surgicalBlockDAO;
 	
@@ -171,15 +171,25 @@ public class SurgicalBlockServiceImpl extends BaseOpenmrsService implements Surg
 			return;
 		}
 		
-		OrderType orderType = orderService.getOrderTypeByUuid(SURGERY_ORDER_TYPE_UUID);
+		String orderTypeUuid = adminService.getGlobalProperty(SURGERY_ORDER_TYPE_UUID_GP, "");
+		if (StringUtils.isBlank(orderTypeUuid)) {
+			log.warn(SURGERY_ORDER_TYPE_UUID_GP + " GP not configured; skipping order creation");
+			return;
+		}
+		OrderType orderType = orderService.getOrderTypeByUuid(orderTypeUuid);
 		if (orderType == null) {
-			log.warn("Surgery Order type not found for uuid: " + SURGERY_ORDER_TYPE_UUID);
+			log.warn("Surgery Order type not found for uuid: " + orderTypeUuid);
 			return;
 		}
 		
-		Concept concept = conceptService.getConceptByUuid(SURGICAL_ORDER_CONCEPT_UUID);
+		String conceptUuid = adminService.getGlobalProperty(SURGICAL_ORDER_CONCEPT_UUID_GP, "");
+		if (StringUtils.isBlank(conceptUuid)) {
+			log.warn(SURGICAL_ORDER_CONCEPT_UUID_GP + " GP not configured; skipping order creation");
+			return;
+		}
+		Concept concept = conceptService.getConceptByUuid(conceptUuid);
 		if (concept == null) {
-			log.warn("Surgical Order concept not found for uuid: " + SURGICAL_ORDER_CONCEPT_UUID);
+			log.warn("Surgical Order concept not found for uuid: " + conceptUuid);
 			return;
 		}
 		
