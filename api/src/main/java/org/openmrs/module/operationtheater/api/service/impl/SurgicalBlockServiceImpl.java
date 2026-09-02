@@ -146,6 +146,7 @@ public class SurgicalBlockServiceImpl extends BaseOpenmrsService implements Surg
 		Context.addProxyPrivilege("Get Order Types");
 		Context.addProxyPrivilege("Add Orders");
 		Context.addProxyPrivilege("Get Concepts");
+		Context.addProxyPrivilege("Get Care Settings");
 		try {
 			createAndLinkSurgeryOrderWithPrivileges(appointment, block);
 		}
@@ -155,6 +156,7 @@ public class SurgicalBlockServiceImpl extends BaseOpenmrsService implements Surg
 			Context.removeProxyPrivilege("Get Order Types");
 			Context.removeProxyPrivilege("Add Orders");
 			Context.removeProxyPrivilege("Get Concepts");
+			Context.removeProxyPrivilege("Get Care Settings");
 		}
 	}
 	

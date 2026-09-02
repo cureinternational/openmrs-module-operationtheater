@@ -132,16 +132,19 @@ public class SurgicalBlockServiceTest extends BaseModuleWebContextSensitiveTest 
 	
 	@Test
 	public void shouldCreateSurgeryOrderForNewAppointmentWithoutRequiringClinicalPrivilegesOnOTRole() throws ParseException {
-		// Seed required metadata (liquibase does not run in module tests)
+		// Seed required metadata and fetch patient while admin — getPatient() requires
+		// GET_PATIENTS which OT: FullAccess does not carry
 		Context.authenticate("admin", "test");
 		setupSurgeryOrderMetadata();
+		org.openmrs.Patient patient = Context.getPatientService().getPatient(10);
 		
 		// Switch to OT coordinator — has only "Manage OT Schedules", no clinical privs
 		Context.authenticate(superUser, superUserPassword);
 		
-		SurgicalBlock block = surgicalBlockService.getSurgicalBlockWithAppointments("5580cddd-c290-66c8-8d3a-96dc33d109f1");
+		// Block 11 has no overlapping blocks and no existing appointments
+		SurgicalBlock block = surgicalBlockService.getSurgicalBlockWithAppointments("5580cddd-c290-66c8-8d3a-96dc33d10921");
 		SurgicalAppointment newAppointment = new SurgicalAppointment();
-		newAppointment.setPatient(Context.getPatientService().getPatient(10));
+		newAppointment.setPatient(patient);
 		newAppointment.setSurgicalBlock(block);
 		block.getSurgicalAppointments().add(newAppointment);
 		
