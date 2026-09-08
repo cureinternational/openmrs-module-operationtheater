@@ -184,6 +184,10 @@ public class SurgicalBlockServiceTest extends BaseModuleWebContextSensitiveTest 
 		        .saveGlobalProperty(new GlobalProperty("operationtheater.surgeryOrderTypeUuid", orderType.getUuid()));
 		Context.getAdministrationService()
 		        .saveGlobalProperty(new GlobalProperty("operationtheater.surgicalOrderConceptUuid", concept.getUuid()));
+		// Set the visit assignment handler so saveEncounter exercises the real handler
+		// path (requires "Get Visits" proxy privilege)
+		Context.getAdministrationService().saveGlobalProperty(
+		    new GlobalProperty("visits.assignmentHandler", "org.openmrs.api.handler.ExistingVisitAssignmentHandler"));
 	}
 	
 }

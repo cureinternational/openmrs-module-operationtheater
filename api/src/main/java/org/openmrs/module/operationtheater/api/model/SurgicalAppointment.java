@@ -27,9 +27,9 @@ public class SurgicalAppointment extends BaseOpenmrsData {
 	private Integer sortWeight;
 	
 	private Set<SurgicalAppointmentAttribute> surgicalAppointmentAttributes;
-
+	
 	private Order order;
-
+	
 	public SurgicalAppointment() {
 	}
 	
@@ -44,6 +44,7 @@ public class SurgicalAppointment extends BaseOpenmrsData {
 		this.setActualStartDatetime(surgicalAppointment.getActualStartDatetime());
 		this.setActualEndDatetime(surgicalAppointment.getActualEndDatetime());
 		this.setSurgicalAppointmentAttributes(surgicalAppointment.getSurgicalAppointmentAttributes());
+		this.setOrder(surgicalAppointment.getOrder());
 	}
 	
 	@Override
@@ -126,11 +127,11 @@ public class SurgicalAppointment extends BaseOpenmrsData {
 	public Order getOrder() {
 		return order;
 	}
-
+	
 	public void setOrder(Order order) {
 		this.order = order;
 	}
-
+	
 	public List<SurgicalAppointmentAttribute> getActiveAttributes() {
 		List<SurgicalAppointmentAttribute> attrs = new Vector<>();
 		for (SurgicalAppointmentAttribute attr : getSurgicalAppointmentAttributes()) {

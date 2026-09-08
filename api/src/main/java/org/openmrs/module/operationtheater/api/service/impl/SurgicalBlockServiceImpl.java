@@ -143,6 +143,9 @@ public class SurgicalBlockServiceImpl extends BaseOpenmrsService implements Surg
 	private void createAndLinkSurgeryOrder(SurgicalAppointment appointment, SurgicalBlock block) {
 		Context.addProxyPrivilege("Get Encounter Types");
 		Context.addProxyPrivilege("Add Encounters");
+		Context.addProxyPrivilege("Get Visits");
+		Context.addProxyPrivilege("Get Visit Types");
+		Context.addProxyPrivilege("Add Visits");
 		Context.addProxyPrivilege("Get Order Types");
 		Context.addProxyPrivilege("Add Orders");
 		Context.addProxyPrivilege("Get Concepts");
@@ -153,6 +156,9 @@ public class SurgicalBlockServiceImpl extends BaseOpenmrsService implements Surg
 		finally {
 			Context.removeProxyPrivilege("Get Encounter Types");
 			Context.removeProxyPrivilege("Add Encounters");
+			Context.removeProxyPrivilege("Get Visits");
+			Context.removeProxyPrivilege("Get Visit Types");
+			Context.removeProxyPrivilege("Add Visits");
 			Context.removeProxyPrivilege("Get Order Types");
 			Context.removeProxyPrivilege("Add Orders");
 			Context.removeProxyPrivilege("Get Concepts");
@@ -207,8 +213,8 @@ public class SurgicalBlockServiceImpl extends BaseOpenmrsService implements Surg
 		}
 		
 		// All prerequisites validated — now safe to create encounter (first DB write).
-		// Visit is intentionally not set: this encounter is solely an OpenMRS context
-		// anchor for the Surgery Order and does not appear in patient visit timelines.
+		// Visit assignment is left to core's visits.assignmentHandler: it attaches the
+		// encounter to an open patient visit if one exists, or leaves it unset.
 		Encounter encounter = new Encounter();
 		encounter.setPatient(appointment.getPatient());
 		encounter.setEncounterType(encounterType);

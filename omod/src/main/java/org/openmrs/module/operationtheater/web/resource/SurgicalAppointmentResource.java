@@ -199,6 +199,11 @@ public class SurgicalAppointmentResource extends DataDelegatingCrudResource<Surg
 		return bedDetails.getPhysicalLocation().getName();
 	}
 	
+	@PropertySetter("order")
+	public static void setOrder(SurgicalAppointment surgicalAppointment, Object value) {
+		throw new IllegalArgumentException("'order' is read-only and is set by the service during scheduling");
+	}
+	
 	@PropertySetter("surgicalAppointmentAttributes")
 	public static void setAttributes(SurgicalAppointment surgicalAppointment, Set<SurgicalAppointmentAttribute> attrs) {
 		for (SurgicalAppointmentAttribute attr : attrs) {
