@@ -15,6 +15,7 @@ import org.openmrs.api.EncounterService;
 import org.openmrs.api.OrderService;
 import org.openmrs.api.context.Context;
 import org.openmrs.api.impl.BaseOpenmrsService;
+import org.openmrs.util.PrivilegeConstants;
 import org.openmrs.module.operationtheater.api.dao.SurgicalBlockDAO;
 import org.openmrs.module.operationtheater.api.model.SurgicalAppointment;
 import org.openmrs.module.operationtheater.api.model.SurgicalBlock;
@@ -23,6 +24,7 @@ import org.openmrs.module.operationtheater.exception.ValidationException;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
 
@@ -141,28 +143,16 @@ public class SurgicalBlockServiceImpl extends BaseOpenmrsService implements Surg
 	}
 	
 	private void createAndLinkSurgeryOrder(SurgicalAppointment appointment, SurgicalBlock block) {
-		Context.addProxyPrivilege("Get Encounter Types");
-		Context.addProxyPrivilege("Add Encounters");
-		Context.addProxyPrivilege("Get Visits");
-		Context.addProxyPrivilege("Get Visit Types");
-		Context.addProxyPrivilege("Add Visits");
-		Context.addProxyPrivilege("Get Order Types");
-		Context.addProxyPrivilege("Add Orders");
-		Context.addProxyPrivilege("Get Concepts");
-		Context.addProxyPrivilege("Get Care Settings");
+		List<String> privileges = Arrays.asList(PrivilegeConstants.GET_ENCOUNTER_TYPES,
+		    PrivilegeConstants.ADD_ENCOUNTERS, PrivilegeConstants.GET_VISITS, PrivilegeConstants.GET_VISIT_TYPES,
+		    PrivilegeConstants.ADD_VISITS, PrivilegeConstants.GET_ORDER_TYPES, PrivilegeConstants.ADD_ORDERS,
+		    PrivilegeConstants.GET_CONCEPTS, PrivilegeConstants.GET_CARE_SETTINGS);
+		privileges.forEach(Context::addProxyPrivilege);
 		try {
 			createAndLinkSurgeryOrderWithPrivileges(appointment, block);
 		}
 		finally {
-			Context.removeProxyPrivilege("Get Encounter Types");
-			Context.removeProxyPrivilege("Add Encounters");
-			Context.removeProxyPrivilege("Get Visits");
-			Context.removeProxyPrivilege("Get Visit Types");
-			Context.removeProxyPrivilege("Add Visits");
-			Context.removeProxyPrivilege("Get Order Types");
-			Context.removeProxyPrivilege("Add Orders");
-			Context.removeProxyPrivilege("Get Concepts");
-			Context.removeProxyPrivilege("Get Care Settings");
+			privileges.forEach(Context::removeProxyPrivilege);
 		}
 	}
 	
@@ -228,6 +218,9 @@ public class SurgicalBlockServiceImpl extends BaseOpenmrsService implements Surg
 		order.setPatient(appointment.getPatient());
 		order.setEncounter(encounter);
 		order.setOrderType(orderType);
+		// The procedure attribute on SurgicalAppointment is a plain java.lang.String,
+		// so there is no concept to derive from the selection. This default concept is
+		// used for every order until procedure concept-set support is introduced.
 		order.setConcept(concept);
 		order.setCareSetting(careSetting);
 		order.setOrderer(block.getProvider());
