@@ -46,6 +46,10 @@ import io.swagger.models.properties.UUIDProperty;
         + "/surgicalAppointment", supportedClass = SurgicalAppointment.class, supportedOpenmrsVersions = { "2.0.* - 9.*" })
 public class SurgicalAppointmentResource extends DataDelegatingCrudResource<SurgicalAppointment> {
 	
+	public SurgicalAppointmentResource() {
+		propertiesIgnoredWhenUpdating.add("order");
+	}
+	
 	@Override
 	public SurgicalAppointment getByUniqueId(String surgicalAppointmentUuid) {
 		return Context.getService(SurgicalAppointmentService.class).getSurgicalAppointmentByUuid(surgicalAppointmentUuid);
@@ -197,11 +201,6 @@ public class SurgicalAppointmentResource extends DataDelegatingCrudResource<Surg
 			return null;
 		}
 		return bedDetails.getPhysicalLocation().getName();
-	}
-	
-	@PropertySetter("order")
-	public static void setOrder(SurgicalAppointment surgicalAppointment, Object value) {
-		throw new IllegalArgumentException("'order' is read-only and is set by the service during scheduling");
 	}
 	
 	@PropertySetter("surgicalAppointmentAttributes")
