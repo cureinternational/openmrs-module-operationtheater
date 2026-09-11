@@ -421,7 +421,7 @@
             <column name="property" value="operationtheater.surgerySchedulingEncounterTypeUuid"/>
             <column name="property_value" value="a2d9f6b3-1c4e-4a7f-b8d2-e5f3c1a6d9b4"/>
             <column name="uuid" valueComputed="UUID()"/>
-            <column name="description" value="UUID of the encounter type used when creating a Surgery Scheduling encounter. Configurable to use a site-specific encounter type."/>
+            <column name="description" value="UUID of the encounter type used when creating a Surgery Scheduling encounter. Configurable to use a site-specific encounter type. Note: on a site whose visits.assignmentHandler is ExistingOrNewVisitAssignmentHandler, visits.encounterTypeToVisitTypeMapping must either be empty or carry an entry for this encounter type, or scheduling will fail."/>
         </insert>
     </changeSet>
 
