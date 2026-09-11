@@ -138,7 +138,7 @@ public class SurgicalAppointmentResource extends DataDelegatingCrudResource<Surg
 			        .property("notes", new StringProperty()).property("sortWeight", new IntegerProperty())
 			        .property("bedNumber", new StringProperty()).property("bedLocation", new StringProperty())
 			        .property("surgicalAppointmentAttributes", new StringProperty())
-			        .property("patientObservations", new StringProperty());
+			        .property("patientObservations", new StringProperty()).property("order", new StringProperty());
 		}
 		if (rep instanceof FullRepresentation) {
 			modelImpl.property("id", new IntegerProperty()).property("uuid", new UUIDProperty())
@@ -147,7 +147,7 @@ public class SurgicalAppointmentResource extends DataDelegatingCrudResource<Surg
 			        .property("notes", new StringProperty()).property("sortWeight", new IntegerProperty())
 			        .property("bedNumber", new StringProperty()).property("bedLocation", new StringProperty())
 			        .property("surgicalAppointmentAttributes", new StringProperty())
-			        .property("patientObservations", new StringProperty());
+			        .property("patientObservations", new StringProperty()).property("order", new StringProperty());
 		}
 		return modelImpl;
 	}
