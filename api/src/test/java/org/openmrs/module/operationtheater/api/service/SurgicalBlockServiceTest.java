@@ -132,24 +132,18 @@ public class SurgicalBlockServiceTest extends BaseModuleWebContextSensitiveTest 
 	
 	@Test
 	public void shouldCreateSurgeryOrderForNewAppointmentWithoutRequiringClinicalPrivilegesOnOTRole() throws ParseException {
-		// Seed required metadata and fetch patient while admin — getPatient() requires
-		// GET_PATIENTS which OT: FullAccess does not carry
 		Context.authenticate("admin", "test");
 		setupSurgeryOrderMetadata();
 		org.openmrs.Patient patient = Context.getPatientService().getPatient(10);
 		
-		// Switch to OT coordinator — has only "Manage OT Schedules", no clinical privs
 		Context.authenticate(superUser, superUserPassword);
 		
-		// Block 11 has no overlapping blocks and no existing appointments
 		SurgicalBlock block = surgicalBlockService.getSurgicalBlockWithAppointments("5580cddd-c290-66c8-8d3a-96dc33d10921");
 		SurgicalAppointment newAppointment = new SurgicalAppointment();
 		newAppointment.setPatient(patient);
 		newAppointment.setSurgicalBlock(block);
 		block.getSurgicalAppointments().add(newAppointment);
 		
-		// Should not throw APIAuthenticationException — proxy privileges cover clinical
-		// ops
 		SurgicalBlock saved = surgicalBlockService.save(block);
 		
 		SurgicalAppointment savedAppointment = saved.getSurgicalAppointments().stream()
@@ -184,10 +178,8 @@ public class SurgicalBlockServiceTest extends BaseModuleWebContextSensitiveTest 
 		        .saveGlobalProperty(new GlobalProperty("operationtheater.surgeryOrderTypeUuid", orderType.getUuid()));
 		Context.getAdministrationService()
 		        .saveGlobalProperty(new GlobalProperty("operationtheater.surgicalOrderConceptUuid", concept.getUuid()));
-		// Set the visit assignment handler so saveEncounter exercises the real handler
-		// path (requires "Get Visits" proxy privilege)
 		Context.getAdministrationService().saveGlobalProperty(
-		    new GlobalProperty("visits.assignmentHandler", "org.openmrs.api.handler.ExistingVisitAssignmentHandler"));
+		    new GlobalProperty("visits.assignmentHandler", "org.openmrs.api.handler.ExistingOrNewVisitAssignmentHandler"));
 	}
 	
 }

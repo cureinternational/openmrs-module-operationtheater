@@ -143,10 +143,10 @@ public class SurgicalBlockServiceImpl extends BaseOpenmrsService implements Surg
 	}
 	
 	private void createAndLinkSurgeryOrder(SurgicalAppointment appointment, SurgicalBlock block) {
-		List<String> privileges = Arrays.asList(PrivilegeConstants.GET_ENCOUNTER_TYPES,
-		    PrivilegeConstants.ADD_ENCOUNTERS, PrivilegeConstants.GET_VISITS, PrivilegeConstants.GET_VISIT_TYPES,
-		    PrivilegeConstants.ADD_VISITS, PrivilegeConstants.GET_ORDER_TYPES, PrivilegeConstants.ADD_ORDERS,
-		    PrivilegeConstants.GET_CONCEPTS, PrivilegeConstants.GET_CARE_SETTINGS);
+		List<String> privileges = Arrays.asList(PrivilegeConstants.GET_ENCOUNTER_TYPES, PrivilegeConstants.ADD_ENCOUNTERS,
+		    PrivilegeConstants.GET_VISITS, PrivilegeConstants.GET_VISIT_TYPES, PrivilegeConstants.ADD_VISITS,
+		    PrivilegeConstants.GET_ORDER_TYPES, PrivilegeConstants.ADD_ORDERS, PrivilegeConstants.GET_CONCEPTS,
+		    PrivilegeConstants.GET_CARE_SETTINGS, PrivilegeConstants.GET_VISIT_ATTRIBUTE_TYPES);
 		privileges.forEach(Context::addProxyPrivilege);
 		try {
 			createAndLinkSurgeryOrderWithPrivileges(appointment, block);
